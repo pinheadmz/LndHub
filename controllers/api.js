@@ -4,6 +4,8 @@ const config = require('../config');
 let express = require('express');
 let router = express.Router();
 let logger = require('../utils/logger');
+let crypto = require('crypto');
+let { bech32 } = require('bech32');
 const MIN_BTC_BLOCK = 670000;
 if (process.env.NODE_ENV !== 'prod') {
   console.log('using config', JSON.stringify(config));
@@ -198,7 +200,76 @@ router.post('/addinvoice', postLimiter, async function (req, res) {
   );
 });
 
-router.post('/payinvoice', postLimiter, async function (req, res) {
+router.get('/lnurlp/:publicid/qr', postLimiter, async function (req, res) {
+  logger.log('/lnurlp/:publicid', [req.id]);
+  let u = new User(redis, bitcoinclient, lightning);
+  const publicid = req.params.publicid;
+  if (!(await u.loadByPublicId(publicid))) {
+    return errorBadArguments(res);
+  }
+
+  let host = req.headers.host;
+  const url = req.protocol + '://' + host + '/lnurlp/' + publicid;
+  const words = bech32.toWords(Buffer.from(url, 'utf8'));
+  const lnurlp = bech32.encode('lnurl', words, 1023);
+  res.send({ lnurlp });
+});
+
+router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
+  logger.log('/lnurlp/:publicid', [req.id]);
+  let u = new User(redis, bitcoinclient, lightning);
+  const publicid = req.params.publicid;
+
+  if (!(await u.loadByPublicId(publicid))) {
+    return errorBadArguments(res);
+  }
+
+  const host = req.headers.host;
+  const metadata = `[["text/identifier","${publicid}@${host}"],["text/plain","Satoshis to ${publicid}@${host}"]]`
+
+  if (!req.query.amount) {
+    return res.send({
+      status: 'OK',
+      callback: req.protocol + '://' + host + '/lnurlp/' + publicid,
+      maxSendable: 1000000000,
+      minSendable: 1000,
+      metadata,
+      tag: 'payRequest',
+      commentAllowed: 280,
+      allowsNostr: true
+    });
+  }
+
+  const satAmount = req.query.amount / 1000;
+
+  const invoice = new Invo(redis, bitcoinclient, lightning);
+  const r_preimage = invoice.makePreimageHex();
+  lightning.addInvoice(
+    {
+      memo: '',
+      value: satAmount,
+      expiry: 3600 * 24,
+      r_preimage: Buffer.from(r_preimage, 'hex').toString('base64'),
+      description_hash: crypto.createHash('sha256').update(metadata).digest(),
+    },
+    async function (err, info) {
+      if (err) return errorLnd(res);
+
+      await u.saveUserInvoice(info);
+      await invoice.savePreimage(r_preimage);
+
+      res.send({
+        status: 'OK',
+        successAction: { tag: 'message', message: `Thanks for the payment! --${publicid}` },
+        routes: [],
+        pr: info.payment_request,
+        disposable: false,
+      });
+    },
+  );
+});
+
+router.post('/payinvoice', async function (req, res) {
   let u = new User(redis, bitcoinclient, lightning);
   if (!(await u.loadByAuthorization(req.headers.authorization))) {
     return errorBadAuth(res);

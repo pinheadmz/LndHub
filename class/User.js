@@ -21,6 +21,7 @@ export class User {
     this._bitcoindrpc = bitcoindrpc;
     this._lightning = lightning;
     this._userid = false;
+    this._publicid = false;
     this._login = false;
     this._password = false;
     this._balance = 0;
@@ -41,6 +42,18 @@ export class User {
   }
   getRefreshToken() {
     return this._refresh_token;
+  }
+
+  async loadByPublicId(publicId) {
+    if (!publicId) return false;
+    let userid = await this._redis.get('userid_for_' + publicId);
+
+    if (userid) {
+      this._userid = userid;
+      return true;
+    }
+
+    return false;
   }
 
   async loadByAuthorization(authorization) {
@@ -76,9 +89,14 @@ export class User {
 
     buffer = crypto.randomBytes(24);
     let userid = buffer.toString('hex');
+
+    buffer = crypto.randomBytes(24);
+    let publicid = buffer.toString('hex');
+
     this._login = login;
     this._password = password;
     this._userid = userid;
+    this._publicid = publicid;
     await this._saveUserToDatabase();
   }
 
@@ -500,6 +518,7 @@ export class User {
   async _saveUserToDatabase() {
     let key;
     await this._redis.set((key = 'user_' + this._login + '_' + this._hash(this._password)), this._userid);
+    await this._redis.set('userid_for_' + this._publicid, this._userid);
   }
 
   /**
