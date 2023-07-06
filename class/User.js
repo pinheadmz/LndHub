@@ -50,10 +50,16 @@ export class User {
 
     if (userid) {
       this._userid = userid;
+      this._publicid = publicId;
       return true;
     }
 
     return false;
+  }
+
+  async getNostrPubkey() {
+    if (!this._publicid) return null;
+    return await this._redis.get('nostrpubkey_for_' + publicId);
   }
 
   async loadByAuthorization(authorization) {

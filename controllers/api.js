@@ -226,6 +226,7 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
 
   const host = req.headers.host;
   const metadata = `[["text/identifier","${publicid}@${host}"],["text/plain","Satoshis to ${publicid}@${host}"]]`
+  const nostrPubkey = u.getNostrPubkey();
 
   if (!req.query.amount) {
     return res.send({
@@ -236,7 +237,8 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
       metadata,
       tag: 'payRequest',
       commentAllowed: 280,
-      allowsNostr: true
+      allowsNostr: true,
+      nostrPubkey
     });
   }
 
