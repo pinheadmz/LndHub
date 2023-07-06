@@ -4,12 +4,16 @@ process.on('uncaughtException', function (err) {
 });
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+const fs = require('fs');
+const https = require('https');
 let express = require('express');
 const helmet = require('helmet');
 let morgan = require('morgan');
 import { v4 as uuidv4 } from 'uuid';
 let logger = require('./utils/logger');
 const config = require('./config');
+const cert = fs.readFileSync(config.tls.cert);
+const key = fs.readFileSync(config.tls.key);
 
 morgan.token('id', function getId(req) {
   return req.id;
@@ -47,10 +51,7 @@ app.use('/static', express.static('static'));
 app.use(require('./controllers/api'));
 app.use(require('./controllers/website'));
 
-const bindHost = process.env.HOST || '0.0.0.0';
-const bindPort = process.env.PORT || 3000;
+let server = https.createServer({key, cert}, app)
+  .listen(3000, () => {console.log('HTTPS server listening on port 3000')});
 
-let server = app.listen(bindPort, bindHost, function () {
-  logger.log('BOOTING UP', 'Listening on ' + bindHost + ':' + bindPort);
-});
 module.exports = server;
