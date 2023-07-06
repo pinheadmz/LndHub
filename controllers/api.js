@@ -322,7 +322,8 @@ router.post('/payinvoice', postLimiter, async function (req, res) {
       let inv = {
         payment_request: req.body.invoice,
         amt: info.num_satoshis, // amt is used only for 'tip' invoices
-        fee_limit: { fixed: Math.floor(info.num_satoshis * forwardFee) + 1 },
+        fee_limit: { fixed: Math.floor(info.num_satoshis * 2) },
+        timeout: 600
       };
       try {
         await u.lockFunds(req.body.invoice, info);
