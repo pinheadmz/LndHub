@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 let config = {
   enableUpdateDescribeGraph: false,
   postRateLimit: 100,
@@ -23,6 +25,11 @@ let config = {
 if (process.env.CONFIG) {
   console.log('using config from env');
   config = JSON.parse(process.env.CONFIG);
+}
+
+if (process.env.CONFIG_FILE) {
+  console.log(`using config from file: ${process.env.CONFIG_FILE}`);
+  config = JSON.parse(fs.readFileSync(process.env.CONFIG_FILE, 'ascii'));
 }
 
 module.exports = config;
