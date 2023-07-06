@@ -18,7 +18,7 @@ var lndCert;
 if (process.env.TLSCERT) {
   lndCert = Buffer.from(process.env.TLSCERT, 'hex');
 } else {
-  lndCert = fs.readFileSync('tls.cert');
+  lndCert = fs.readFileSync(config.lnd.cert);
 }
 process.env.VERBOSE && console.log('using tls.cert', lndCert.toString('hex'));
 let sslCreds = grpc.credentials.createSsl(lndCert);
