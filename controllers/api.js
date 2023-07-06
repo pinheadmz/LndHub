@@ -139,21 +139,15 @@ const postLimiter = rateLimit({
   max: config.postRateLimit || 100,
 });
 
-router.post('/create', postLimiter, async function (req, res) {
-  logger.log('/create', [req.id]);
-  // Valid if the partnerid isn't there or is a string (same with accounttype)
-  if (! (
-        (!req.body.partnerid || (typeof req.body.partnerid === 'string' || req.body.partnerid instanceof String))
-        && (!req.body.accounttype || (typeof req.body.accounttype === 'string' || req.body.accounttype instanceof String))
-      ) ) return errorBadArguments(res);
-  
-  if (config.sunset) return errorSunset(res);
-
-  let u = new User(redis, bitcoinclient, lightning);
-  await u.create();
-  await u.saveMetadata({ partnerid: req.body.partnerid, accounttype: req.body.accounttype, created_at: new Date().toISOString() });
-  res.send({ login: u.getLogin(), password: u.getPassword() });
-});
+//router.post('/create', postLimiter, async function (req, res) {
+//  logger.log('/create', [req.id]);
+//  if (!(req.body.partnerid && req.body.partnerid === 'bluewallet' && req.body.accounttype)) return errorBadArguments(res);
+//
+// let u = new User(redis, bitcoinclient, lightning);
+//  await u.create();
+//  await u.saveMetadata({ partnerid: req.body.partnerid, accounttype: req.body.accounttype, created_at: new Date().toISOString() });
+//  res.send({ login: u.getLogin(), password: u.getPassword() });
+//});
 
 router.post('/auth', postLimiter, async function (req, res) {
   logger.log('/auth', [req.id]);
