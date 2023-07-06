@@ -16,7 +16,8 @@
   },
   "lnd": {
     "url": "1.1.1.1:10009",
-    "password": ""
+    "password": "",
+    "macaroon": "/.lnd/admin.macaroon"
   },
   "tls": {
     "cert": "/etc/letsencrypt/live/example.com/fullchain.pem",

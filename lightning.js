@@ -26,7 +26,7 @@ let macaroon;
 if (process.env.MACAROON) {
   macaroon = process.env.MACAROON;
 } else {
-  macaroon = fs.readFileSync('admin.macaroon').toString('hex');
+  macaroon = fs.readFileSync(config.lnd.macaroon).toString('hex');
 }
 process.env.VERBOSE && console.log('using macaroon', macaroon);
 let macaroonCreds = grpc.credentials.createFromMetadataGenerator(function (args, callback) {
