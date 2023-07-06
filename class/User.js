@@ -59,7 +59,7 @@ export class User {
 
   async getNostrPubkey() {
     if (!this._publicid) return null;
-    return await this._redis.get('nostrpubkey_for_' + publicId);
+    return await this._redis.get('nostrpubkey_for_' + this._publicid);
   }
 
   async loadByAuthorization(authorization) {
