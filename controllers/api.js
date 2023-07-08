@@ -1,6 +1,7 @@
 import { User, Lock, Paym, Invo } from '../class/';
 import Frisbee from 'frisbee';
 const config = require('../config');
+const fs = require('fs');
 let express = require('express');
 let router = express.Router();
 let logger = require('../utils/logger');
@@ -70,6 +71,9 @@ redis.info(function (err, info) {
 
 const subscribeInvoicesCallCallback = async function (response) {
   if (response.state === 'SETTLED') {
+    if (config.blockclock.path) {
+      fs.writeFileSync(config.blockclock.path, JSON.stringify(response));
+    }
     const LightningInvoiceSettledNotification = {
       memo: response.memo,
       preimage: response.r_preimage.toString('hex'),

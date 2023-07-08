@@ -23,5 +23,8 @@
   "tls": {
     "cert": "/etc/letsencrypt/live/example.com/fullchain.pem",
     "key": "/etc/letsencrypt/live/example.com/privkey.pem"
+  },
+  "blockclock": {
+    "path": "/ClockBlocker/data/ln.txt"
   }
 }
