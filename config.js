@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 let config = {
   enableUpdateDescribeGraph: false,
@@ -7,19 +8,28 @@ let config = {
   forwardReserveFee: 0.01, // default 0.01
   intraHubFee: 0.003, // default 0.003
   bitcoind: {
-    rpc: 'http://login:password@1.1.1.1:8332/wallet/wallet.dat',
+    rpc: 'http://polaruser:polarpass@127.0.0.1:18443/',
   },
   redis: {
-    port: 12914,
-    host: '1.1.1.1',
+    port: 6379,
+    host: '127.0.0.1',
     family: 4,
-    password: 'password',
+    password: '',
     db: 0,
   },
   lnd: {
-    url: '1.1.1.1:10009',
-    password: '',
+    url: '127.0.0.1:10001',
+    password: 'polarpass',
+    cert: '/Users/matthewzipkin/.polar/networks/1/volumes/lnd/alice/tls.cert',
+    macaroon: '/Users/matthewzipkin/.polar/networks/1/volumes/lnd/alice/data/chain/bitcoin/regtest/admin.macaroon'
   },
+  tls: {
+    cert: path.join(__dirname, 'test', 'data', 'cert.crt'),
+    key: path.join(__dirname, 'test', 'data', 'cert.key')
+  },
+  blockclock: {
+    path: path.join(__dirname, 'test', 'data', 'ln.txt')
+  }
 };
 
 if (process.env.CONFIG) {
