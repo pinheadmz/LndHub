@@ -8,7 +8,7 @@ let config = {
   forwardReserveFee: 0.01, // default 0.01
   intraHubFee: 0.003, // default 0.003
   bitcoind: {
-    rpc: 'http://polaruser:polarpass@127.0.0.1:18443/',
+    rpc: 'http://polaruser:polarpass@127.0.0.1:18444/',
   },
   redis: {
     port: 6379,
@@ -18,7 +18,7 @@ let config = {
     db: 0,
   },
   lnd: {
-    url: '127.0.0.1:10001',
+    url: '127.0.0.1:10003',
     password: 'polarpass',
     cert: '/Users/matthewzipkin/.polar/networks/1/volumes/lnd/alice/tls.cert',
     macaroon: '/Users/matthewzipkin/.polar/networks/1/volumes/lnd/alice/data/chain/bitcoin/regtest/admin.macaroon'
@@ -29,6 +29,9 @@ let config = {
   },
   blockclock: {
     path: path.join(__dirname, 'test', 'data', 'ln.txt')
+  },
+  nostr: {
+    nsec: 'nsec18r8r882j8kljznsdssf4772svy72v7lvpt64pm5aq95lr3gj7gmsn27uv9'
   }
 };
 

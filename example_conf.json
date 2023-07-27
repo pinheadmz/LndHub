@@ -26,5 +26,8 @@
   },
   "blockclock": {
     "path": "/ClockBlocker/data/ln.txt"
+  },
+  "nostr": {
+    "nsec": "nsec18r8r882j8kljznsdssf4772svy72v7lvpt64pm5aq95lr3gj7gmsn27uv9"
   }
 }

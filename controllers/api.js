@@ -1,5 +1,7 @@
 import { User, Lock, Paym, Invo } from '../class/';
 import Frisbee from 'frisbee';
+import { Keys, Event, Relay } from 'boogers';
+const assert = require('assert');
 const config = require('../config');
 const fs = require('fs');
 let express = require('express');
@@ -74,6 +76,18 @@ const subscribeInvoicesCallCallback = async function (response) {
     if (config.blockclock.path) {
       fs.writeFileSync(config.blockclock.path, JSON.stringify(response));
     }
+
+    const r_preimage = response.r_preimage.toString('hex');
+    const str = await redis.get('zapreceipt_for_preimage_' + r_preimage);
+    const json = JSON.parse(str);
+
+    const rec = new Event(json);
+    const desc = rec.getTagValue('description');
+    const req = new Event(JSON.parse(desc));
+    const relays = req.getTagValues('relays');
+
+    Relay.sendEventToRelays(rec, relays);
+
     const LightningInvoiceSettledNotification = {
       memo: response.memo,
       preimage: response.r_preimage.toString('hex'),
@@ -230,7 +244,8 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
 
   const host = req.headers.host;
   const metadata = `[["text/identifier","${publicid}@${host}"],["text/plain","Satoshis to ${publicid}@${host}"]]`
-  const nostrPubkey = u.getNostrPubkey();
+  const keys = Keys.importNsec(config.nostr.nsec);
+  const nostrPubkey = keys.pub.toString('hex');
 
   if (!req.query.amount) {
     return res.send({
@@ -246,23 +261,75 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
     });
   }
 
+  let description = null;
+  let zapreq = null;
+  let p = null;
+  let e = null;
+  let relays = null;
+  if (req.query.nostr) {
+    try {
+      zapreq = JSON.parse(unescape(req.query.nostr));
+      logger.log('nostr', `received data: ${Object.keys(zapreq)}`);
+
+      const ZRevent = new Event(zapreq);
+      assert(ZRevent.verify(), 'invalid signature');
+
+      p = ZRevent.getTagValue('p');
+
+      const es = ZRevent.getTagValues('e');
+      if (es.length === 1) {
+        e = es[0];
+      } else {
+        assert(es.length === 0, 'invalid e\'s');
+      }
+
+      relays = ZRevent.getTagValues('relays');
+
+      const amt = ZRevent.getTagValue('amount');
+      if (amt)
+        assert(amt === req.query.amount, `amount does not match: ${amt} / ${req.query.amount}`);
+      // "If there is an `a` tag,
+      // it MUST be a valid NIP-33 event coordinate"
+      //   ... eh :-/
+
+      description = JSON.stringify(ZRevent.getJSON());
+    } catch (e) {
+      logger.log('nostr', `could not parse data: ${e.message}`)
+    }
+  }
+
   const satAmount = req.query.amount / 1000;
 
   const invoice = new Invo(redis, bitcoinclient, lightning);
   const r_preimage = invoice.makePreimageHex();
+
   lightning.addInvoice(
     {
       memo: '',
       value: satAmount,
       expiry: 3600 * 24,
       r_preimage: Buffer.from(r_preimage, 'hex').toString('base64'),
-      description_hash: crypto.createHash('sha256').update(metadata).digest(),
+      description_hash: crypto.createHash('sha256').update(description).digest(),
     },
     async function (err, info) {
       if (err) return errorLnd(res);
 
       await u.saveUserInvoice(info);
       await invoice.savePreimage(r_preimage);
+
+      if (p && e && description) {
+        const zapreceipt = new Event();
+        zapreceipt.kind = 9735;
+        zapreceipt.tags.push(["p", p]);
+        if (e)
+          zapreceipt.tags.push(["e", e]);
+        zapreceipt.tags.push(["bolt11", info.payment_request]);
+        zapreceipt.tags.push(["description", description]);
+        const key = Keys.importNsec(config.nostr.nsec);
+        zapreceipt.sign(key);
+
+        redis.set('zapreceipt_for_preimage_' + r_preimage, JSON.stringify(zapreceipt.getJSON()));
+      }
 
       res.send({
         status: 'OK',
@@ -271,6 +338,7 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
         pr: info.payment_request,
         disposable: false,
       });
+
     },
   );
 });
