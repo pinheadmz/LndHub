@@ -261,7 +261,7 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
     });
   }
 
-  let description = null;
+  let description = metadata;
   let zapreq = null;
   let p = null;
   let e = null;
