@@ -230,6 +230,12 @@ router.get('/lnurlp/:publicid/qr', postLimiter, async function (req, res) {
   const url = req.protocol + '://' + host + '/lnurlp/' + publicid;
   const words = bech32.toWords(Buffer.from(url, 'utf8'));
   const lnurlp = bech32.encode('lnurl', words, 1023);
+
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   res.send({ lnurlp });
 });
 
@@ -330,6 +336,11 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
 
         redis.set('zapreceipt_for_preimage_' + r_preimage, JSON.stringify(zapreceipt.getJSON()));
       }
+
+      // Set CORS headers
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
       res.send({
         status: 'OK',
