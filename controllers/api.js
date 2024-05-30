@@ -253,6 +253,11 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
   const keys = Keys.importNsec(config.nostr.nsec);
   const nostrPubkey = keys.pub.toString('hex');
 
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   if (!req.query.amount) {
     return res.send({
       status: 'OK',
@@ -336,11 +341,6 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
 
         redis.set('zapreceipt_for_preimage_' + r_preimage, JSON.stringify(zapreceipt.getJSON()));
       }
-
-      // Set CORS headers
-      res.set('Access-Control-Allow-Origin', '*');
-      res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
       res.send({
         status: 'OK',
