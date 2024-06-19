@@ -87,6 +87,9 @@ const subscribeInvoicesCallCallback = async function (response) {
     const relays = req.getTagValues('relays');
 
     Relay.sendEventToRelays(rec, relays);
+    if (config.nostr.relays) {
+      Relay.sendEventToRelays(rec, config.nostr.relays);
+    }
 
     const LightningInvoiceSettledNotification = {
       memo: response.memo,
