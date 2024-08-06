@@ -221,8 +221,8 @@ router.post('/addinvoice', postLimiter, async function (req, res) {
   );
 });
 
-router.get('/lnurlp/:publicid/qr', postLimiter, async function (req, res) {
-  logger.log('/lnurlp/:publicid', [req.id]);
+router.get('/.well-known/lnurlp/:publicid/qr', postLimiter, async function (req, res) {
+  logger.log('/.well-known/lnurlp/:publicid', [req.id]);
   let u = new User(redis, bitcoinclient, lightning);
   const publicid = req.params.publicid;
   if (!(await u.loadByPublicId(publicid))) {
@@ -230,7 +230,7 @@ router.get('/lnurlp/:publicid/qr', postLimiter, async function (req, res) {
   }
 
   let host = req.headers.host;
-  const url = req.protocol + '://' + host + '/lnurlp/' + publicid;
+  const url = req.protocol + '://' + host + '/.well-known/lnurlp/' + publicid;
   const words = bech32.toWords(Buffer.from(url, 'utf8'));
   const lnurlp = bech32.encode('lnurl', words, 1023);
 
@@ -242,8 +242,8 @@ router.get('/lnurlp/:publicid/qr', postLimiter, async function (req, res) {
   res.send({ lnurlp });
 });
 
-router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
-  logger.log('/lnurlp/:publicid', [req.id]);
+router.get('/.well-known/lnurlp/:publicid', postLimiter, async function (req, res) {
+  logger.log('/.well-known/lnurlp/:publicid', [req.id]);
   let u = new User(redis, bitcoinclient, lightning);
   const publicid = req.params.publicid;
 
@@ -264,7 +264,7 @@ router.get('/lnurlp/:publicid', postLimiter, async function (req, res) {
   if (!req.query.amount) {
     return res.send({
       status: 'OK',
-      callback: req.protocol + '://' + host + '/lnurlp/' + publicid,
+      callback: req.protocol + '://' + host + '/.well-known/lnurlp/' + publicid,
       maxSendable: 1000000000,
       minSendable: 1000,
       metadata,
