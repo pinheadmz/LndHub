@@ -11,7 +11,7 @@ let crypto = require('crypto');
 let { bech32 } = require('bech32');
 const MIN_BTC_BLOCK = 670000;
 if (process.env.NODE_ENV !== 'prod') {
-  console.log('using config', JSON.stringify(config));
+  logger.log('using config', JSON.stringify(config));
 }
 
 var Redis = require('ioredis');
@@ -40,7 +40,7 @@ if (config.bitcoind) {
         console.error('bitcoind is not caught up');
         process.exit(1);
       }
-      console.log('bitcoind getblockchaininfo:', info);
+      logger.log('bitcoind getblockchaininfo:', info);
     } else {
       console.error('bitcoind failure:', err, info);
       process.exit(2);
@@ -79,16 +79,18 @@ const subscribeInvoicesCallCallback = async function (response) {
 
     const r_preimage = response.r_preimage.toString('hex');
     const str = await redis.get('zapreceipt_for_preimage_' + r_preimage);
-    const json = JSON.parse(str);
+    if (str) {
+      const json = JSON.parse(str);
 
-    const rec = new Event(json);
-    const desc = rec.getTagValue('description');
-    const req = new Event(JSON.parse(desc));
-    const relays = req.getTagValues('relays');
+      const rec = new Event(json);
+      const desc = rec.getTagValue('description');
+      const req = new Event(JSON.parse(desc));
+      const relays = req.getTagValues('relays');
 
-    Relay.sendEventToRelays(rec, relays);
-    if (config.nostr.relays) {
-      Relay.sendEventToRelays(rec, config.nostr.relays);
+      Relay.sendEventToRelays(rec, relays);
+      if (config.nostr.relays) {
+        Relay.sendEventToRelays(rec, config.nostr.relays);
+      }
     }
 
     const LightningInvoiceSettledNotification = {
@@ -112,7 +114,7 @@ const subscribeInvoicesCallCallback = async function (response) {
     const user = new User(redis, bitcoinclient, lightning);
     user._userid = await user.getUseridByPaymentHash(LightningInvoiceSettledNotification.hash);
     await user.clearBalanceCache();
-    console.log('payment', LightningInvoiceSettledNotification.hash, 'was paid, posting to GroundControl...');
+    logger.log('payment', LightningInvoiceSettledNotification.hash, 'was paid, posting to GroundControl...');
     const baseURI = process.env.GROUNDCONTROL;
     if (!baseURI) return;
     const _api = new Frisbee({ baseURI: baseURI });
@@ -129,7 +131,7 @@ const subscribeInvoicesCallCallback = async function (response) {
         },
       ),
     );
-    console.log('GroundControl:', apiResponse.originalResponse.status);
+    logger.log('GroundControl:', apiResponse.originalResponse.status);
   }
 };
 let subscribeInvoicesCall = lightning.subscribeInvoices({});
@@ -143,10 +145,10 @@ subscribeInvoicesCall.on('end', function () {
 
 let lightningDescribeGraph = {};
 function updateDescribeGraph() {
-  console.log('updateDescribeGraph()');
+  // logger.log('updateDescribeGraph()');
   lightning.describeGraph({ include_unannounced: true }, function (err, response) {
     if (!err) lightningDescribeGraph = response;
-    console.log('updated graph');
+    // console.log('updated graph');
   });
 }
 if (config.enableUpdateDescribeGraph) {
@@ -317,9 +319,14 @@ router.get('/.well-known/lnurlp/:publicid', postLimiter, async function (req, re
   const invoice = new Invo(redis, bitcoinclient, lightning);
   const r_preimage = invoice.makePreimageHex();
 
+  let memo = JSON.stringify(zapreq);
+  if (req.query.comment) {
+    memo = decodeURIComponent(req.query.comment);
+  }
+
   lightning.addInvoice(
     {
-      memo: '',
+      memo: memo.slice(0, 1000),
       value: satAmount,
       expiry: 3600 * 24,
       r_preimage: Buffer.from(r_preimage, 'hex').toString('base64'),
@@ -671,7 +678,7 @@ router.get('/queryroutes/:source/:dest/:amt', async function (req, res) {
     source_pub_key: req.params.source,
   };
   lightning.queryRoutes(request, function (err, response) {
-    console.log(JSON.stringify(response, null, 2));
+    logger.log(JSON.stringify(response, null, 2));
     res.send(response);
   });
 });

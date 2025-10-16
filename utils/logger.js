@@ -21,7 +21,7 @@ const logger = createLogger({
   format: combine(timestamp(), logFormat),
   transports: [
     new transports.Console({
-      level: 'error',
+      level: 'info',
     }),
     new transports.Console(),
   ],

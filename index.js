@@ -5,7 +5,7 @@ process.on('uncaughtException', function (err) {
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const fs = require('fs');
-const https = require('https');
+const http = require('http');
 let express = require('express');
 const helmet = require('helmet');
 let morgan = require('morgan');
@@ -38,7 +38,7 @@ app.use(function (req, res, next) {
 
 app.use(
   morgan(
-    ':id :remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"',
+    '                           ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"',
   ),
 );
 
@@ -51,7 +51,7 @@ app.use('/static', express.static('static'));
 app.use(require('./controllers/api'));
 app.use(require('./controllers/website'));
 
-let server = https.createServer({key, cert}, app)
-  .listen(3000, () => {console.log('HTTPS server listening on port 3000')});
+let server = http.createServer(app)
+  .listen(3000, () => {console.log('HTTP server listening on port 3000')});
 
 module.exports = server;
