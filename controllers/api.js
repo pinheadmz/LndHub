@@ -85,9 +85,8 @@ const subscribeInvoicesCallCallback = async function (response) {
       const rec = new Event(json);
       const desc = rec.getTagValue('description');
       const req = new Event(JSON.parse(desc));
-      const relays = req.getTagValues('relays');
-
-      Relay.sendEventToRelays(rec, relays);
+      // SECURITY: never send to sender-provided relay URLs (blind SSRF).
+      // Only broadcast zap receipts to our own trusted relays from config.
       if (config.nostr.relays) {
         Relay.sendEventToRelays(rec, config.nostr.relays);
       }
