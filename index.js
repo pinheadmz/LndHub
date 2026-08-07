@@ -49,7 +49,10 @@ app.use(bodyParser.json(null)); // parse application/json
 
 app.use('/static', express.static('static'));
 app.use(require('./controllers/api'));
-app.use(require('./controllers/website'));
+// SECURITY: website controller disabled. It calls lightning.listChannels at
+// load time (requires offchain:read) and exits the process on any LND error.
+// The public web UI (/, /qr) is not needed for the LNURL-only server.
+// app.use(require('./controllers/website'));
 
 let server = http.createServer(app)
   .listen(3000, () => {console.log('HTTP server listening on port 3000')});
